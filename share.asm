@@ -1,3 +1,13 @@
+bits 16
+org 0x8000
+
+ptr_file_buffer: dw file_buffer
+ptr_has_files: dw has_files
+ptr_file_data: dw file_data
+
+file_buffer: times 512 db 0
+has_files: times 10 db 0
+file_data: times 5120 db 0
 dirty_flags: times 10 db 0
 
 read_sector:
