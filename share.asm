@@ -1,43 +1,34 @@
-bits 16
-org 0x8000
+[org 0x9C00]
+    jmp syncdaemon_init  
+    jmp syncdaemon_save
+    jmp mark_dirty
 
-ptr_file_buffer: dw file_buffer
-ptr_has_files: dw has_files
-ptr_file_data: dw file_data
-
-file_buffer: times 512 db 0
-has_files: times 10 db 0
-file_data: times 5120 db 0
+ptr_has_files dw 0
+ptr_file_data dw 0
+ptr_file_buffer dw 0
 dirty_flags: times 10 db 0
 
 read_sector:
     pusha
-    push ds
-    pop es
-    push ax
-    mov cx, 36
-    xor dx, dx
-    div cx
-    mov ch, al
-    mov ax, dx
-    mov cx, 18
-    xor dx, dx
-    div cx
-    mov dh, al
-    inc dx
-    mov cl, dl
-    pop ax
     mov ah, 0x02
-    mov al, 1
+    mov ch, 0
+    mov dh, 0
     mov dl, 0
+    mov al, 1
     int 0x13
     popa
     ret
 
 write_sector:
     pusha
-    push ds
-    pop es
+    push ax
+    mov cx, 18
+    xor dx, dx
+    div cx
+    inc dx
+    mov cl, dl
+    mov ax, dx
+    pop ax
     push ax
     mov cx, 36
     xor dx, dx
@@ -48,8 +39,6 @@ write_sector:
     xor dx, dx
     div cx
     mov dh, al
-    inc dx
-    mov cl, dl
     pop ax
     mov ah, 0x03
     mov al, 1
@@ -59,10 +48,13 @@ write_sector:
     ret
 
 syncdaemon_init:
+    mov [ptr_has_files], bx
+    mov [ptr_file_data], si
+    mov [ptr_file_buffer], di
     pusha
     mov bx, [ptr_file_buffer]
     mov ax, 18
-    call read_sector
+    call read_sector  
     mov si, [ptr_file_buffer]
     mov di, [ptr_has_files]
     mov cx, 10
@@ -96,7 +88,7 @@ syncdaemon_save:
     jae .done
     cmp byte [dirty_flags + bp], 0
     je .next
-    mov ax, bp
+    mov ax, bp  
     shl ax, 9
     mov bx, [ptr_file_data]
     add bx, ax
@@ -113,7 +105,7 @@ syncdaemon_save:
     mov cx, 10
     rep movsb
     mov bx, [ptr_file_buffer]
-    mov ax, 18
+    mov cl, 18
     call write_sector
     popa
     ret
